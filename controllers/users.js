@@ -4,7 +4,6 @@ const User = require('../models/user');
 const NotFoundError = require('../errors/not-found-err');
 const BadRequestError = require('../errors/bad-request-err');
 const ConflictingRequestError = require('../errors/conflicting-request-err');
-const UnauthorizedError = require('../errors/unauthorized-err');
 
 const { NODE_ENV, JWT_SECRET } = process.env;
 
@@ -66,7 +65,7 @@ module.exports.createUser = (req, res, next) => {
 
 module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
-  User.findUserByCredentials(email, password)
+  return User.findUserByCredentials(email, password)
     .then((user) => {
       const token = jwt.sign({ _id: user._id }, NODE_ENV === 'production' ? JWT_SECRET : 'super-strong-secret', { expiresIn: '7d' });
       res.cookie('jwt', token, {
@@ -75,9 +74,7 @@ module.exports.login = (req, res, next) => {
       });
       res.send({ token });
     })
-    .catch(() => {
-      next(new UnauthorizedError('Пользователь не найден'));
-    });
+    .catch(next);
 };
 
 module.exports.getMe = (req, res, next) => {
