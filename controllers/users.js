@@ -4,6 +4,7 @@ const User = require('../models/user');
 const NotFoundError = require('../errors/not-found-err');
 const BadRequestError = require('../errors/bad-request-err');
 const ConflictingRequestError = require('../errors/conflicting-request-err');
+const UnauthorizedError = require('../errors/unauthorized-err');
 
 const { NODE_ENV, JWT_SECRET } = process.env;
 
@@ -74,17 +75,18 @@ module.exports.login = (req, res, next) => {
       });
       res.send({ token });
     })
-    .catch(next);
+    .catch(() => {
+      next(new UnauthorizedError('Пользователь не найден'));
+    });
 };
 
 module.exports.getMe = (req, res, next) => {
-  User.findById(req.user)
+  User.findById(req.user._id)
     .then((user) => {
       if (!user) {
-        next(new NotFoundError('Пользователь c данным ID не существует'));
-        return;
+        throw new NotFoundError('Пользователь не найден');
       }
-      res.send(user);
+      res.send({ data: user });
     })
     .catch(next);
 };
